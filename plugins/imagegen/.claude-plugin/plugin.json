@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "description": "Generate, edit, and batch-create images from inside Claude Code by delegating to OpenAI's Codex CLI (built-in gpt-image, billed against the user's ChatGPT subscription — no API key, no per-image $ charges).",
   "author": {
-    "name": "imagegen contributors"
+    "name": "colin-automates",
+    "url": "https://github.com/colin-automates"
   },
   "license": "MIT",
   "homepage": "https://github.com/colin-automates/Codex-ImageGen--Claude-Code",

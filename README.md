@@ -1,15 +1,16 @@
 # imagegen — Claude Code plugin
 
-Generate, edit, and batch-create images from inside Claude Code by delegating to OpenAI's **Codex CLI** (built-in `gpt-image`). Billed against your **ChatGPT subscription** — no API key, no per-image dollar charges.
+![hero](./assets/hero.png)
 
-Auto-activates when the current task could benefit from a real image (empty `<img>`, README banner, OG image, slide deck hero, app icon set, etc.). Or invoke explicitly via slash commands.
+[![CI](https://github.com/colin-automates/Codex-ImageGen--Claude-Code/actions/workflows/ci.yml/badge.svg)](https://github.com/colin-automates/Codex-ImageGen--Claude-Code/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/github/v/tag/colin-automates/Codex-ImageGen--Claude-Code?label=version&sort=semver)](https://github.com/colin-automates/Codex-ImageGen--Claude-Code/releases)
 
-```
-/imagegen "sunset over mountains, photorealistic"
-/imagegen "three coffee app icons: a bean, a steaming mug, a manual grinder"
-/imagegen:edit ./public/hero.png make it more dramatic, add lightning
-/imagegen setup
-```
+**Generate real images from inside Claude Code, with zero API costs.** The plugin delegates to OpenAI's [Codex CLI](https://developers.openai.com/codex/cli) and its built-in `gpt-image` tool — billed against your **ChatGPT subscription**, not the OpenAI API.
+
+> 🎯 **The point**: once installed, Claude generates images **automatically** whenever your task involves one — websites, READMEs, blog posts, slide decks, game assets, app icons, marketing pages. No `/` commands needed. No "may I generate this?" prompts. The plugin's broad-trigger SKILL watches every conversation and fires when an actual rendered image (not a placeholder) would land better than a description.
+
+Slash commands (`/imagegen "<prompt>"`, `/imagegen:edit`) are still there for explicit control — but the typical day-to-day flow is just *"build me a roofing company landing page"* and the images appear, wired into your HTML.
 
 ## Quick start
 
@@ -21,7 +22,43 @@ In any Claude Code workspace:
 /imagegen:setup
 ```
 
-`/imagegen:setup` auto-installs Codex CLI if it's missing, auto-launches a browser to sign into ChatGPT if you're not logged in, and runs a test image to confirm the pipeline. When it reports green, you're done.
+`/imagegen:setup` auto-installs Codex CLI if it's missing, auto-launches a browser to sign into ChatGPT if you're not logged in, and runs a test image to confirm the pipeline. When it reports green, you're done — Claude will generate images on its own from there.
+
+---
+
+## How auto-activation actually feels
+
+The headline feature. Once the plugin is installed, you don't think about it. Examples that fire it without any slash command:
+
+| You say | What happens silently |
+|---|---|
+| *"build me a hiking-blog landing page"* | Claude scaffolds the HTML, then generates a hero photo, 3 service-section illustrations, and an OG image — all wired into the right `<img>` slots. |
+| *"add a banner to the README"* | A 1536×1024 hero image lands at `./docs/images/banner.png` and the README's empty image syntax is filled in. |
+| *"I need a logo for a coffee app, flat vector, two-tone"* | One image generated; the prompt is interpreted style-aware. |
+| *"generate enemy sprites: red, blue, green"* | Auto-routes to **set mode** — three coherent sprites in one Codex session, sharing palette/style. |
+| *"redesign this slide deck"* | Empty hero slots in `.md`/marp/reveal.js decks get filled per-slide. |
+| *"fix the broken `<img src="">` in landing.html"* | Single image, saved next to the page, `src=""` rewritten with a real `alt`. |
+
+**Trigger surface** (what's in the SKILL's `description` field that Claude reads to decide whether to fire): websites, web apps, READMEs, slide decks, marketing pages, blog posts, game assets, mockups, hero/og/banner/cover images, favicons, icons, logos, brand marks, textures, thumbnails, social cards, plus the verbs *"generate / create / make / draw / render / design / edit / redo"* applied to *image / picture / photo / illustration / sprite / banner*.
+
+**Non-triggers** (intentionally): SVG icons that match an existing icon set, code-rendered charts, screenshots of running code, or anything you explicitly told Claude not to generate.
+
+**Multi-image intent** auto-detects too: if your prompt has an explicit count ("three icons"), a comma/and list, pipe-separated parts, or set-keywords (*set / series / pack / roster*), Claude calls `generate_image_set` once instead of `generate_image` N times — keeps style consistent and uses fewer ChatGPT plan turns.
+
+## Slash commands (for explicit control)
+
+| Command | What it does |
+|---|---|
+| `/imagegen "<prompt>"` | Generate one image, or a coherent set if the prompt describes multiple. |
+| `/imagegen setup` | One-time setup probe — installs Codex CLI if missing, auto-launches browser sign-in if needed. Same as `/imagegen:setup`. |
+| `/imagegen:edit <path> <prompt>` | Edit an existing image with a natural-language instruction. |
+| `/imagegen:img <prompt>` | Alias of `/imagegen`. |
+
+```
+/imagegen "a small flat-vector logo for a hiking startup, two-tone palette, mountain silhouette"
+/imagegen "headers for four blog posts about hiking, climbing, kayaking, biking"
+/imagegen:edit ./public/hero.png "make the sky look stormy"
+```
 
 ## Requirements
 
@@ -31,37 +68,6 @@ In any Claude Code workspace:
   - `npm install -g @openai/codex` (cross-platform, what setup uses)
   - `brew install openai/tap/codex` (macOS)
   - Download a binary from https://github.com/openai/codex/releases
-
-## Usage
-
-### Auto-activation
-
-Just describe what you want. The skill picks dimensions, quality, save path, and prompt expansion silently, then wires the result into the file you were editing (rewrites the empty `<img src>`, fills the empty markdown image, etc.).
-
-Examples that should auto-fire:
-- *"Make this landing page nicer"* — file has an empty `<img src="">`.
-- *"Add a hero image to the README"* — README has no banner.
-- *"I need a flat-vector logo for a coffee app"* — pure description.
-- *"Generate enemy sprites: red, blue, green"* — auto-routes to set mode for visual coherence.
-
-### Slash commands
-
-| Command | What it does |
-|---|---|
-| `/imagegen "<prompt>"` | Generate one image, or a coherent set if the prompt describes multiple. |
-| `/imagegen setup` | One-time setup probe — verifies Codex, auto-launches browser sign-in if needed. Same as `/imagegen:setup`. |
-| `/imagegen:edit <path> <prompt>` | Edit an existing image with a natural-language instruction. |
-| `/imagegen:img <prompt>` | Alias of `/imagegen`. |
-
-There is no separate `:set` slash command — `/imagegen` auto-detects multi-image intent (an explicit count, a comma/and list, pipe-separated prompts, or set-keywords) and routes to the set tool.
-
-### Examples
-
-```
-/imagegen "a small flat-vector logo for a hiking startup, two-tone palette, mountain silhouette"
-/imagegen "headers for four blog posts about hiking, climbing, kayaking, biking"
-/imagegen:edit ./public/hero.png "make the sky look stormy"
-```
 
 ## How it works
 
@@ -79,7 +85,7 @@ OpenAI's gpt-image backend
 Your ChatGPT subscription   ← (NOT your OpenAI API account)
 ```
 
-The plugin's MCP server (TypeScript, in [plugins/imagegen/server/](plugins/imagegen/server/), bundled with esbuild to `dist/index.cjs`) shells out to:
+The MCP server (TypeScript, in [plugins/imagegen/server/](plugins/imagegen/server/), bundled with esbuild to `dist/index.cjs`) shells out to:
 
 ```
 codex exec --skip-git-repo-check --sandbox danger-full-access \
@@ -87,15 +93,16 @@ codex exec --skip-git-repo-check --sandbox danger-full-access \
   "@imagegen <your prompt>. Save to <abs save_path>. ..."
 ```
 
-Codex generates the image with its built-in `gpt-image` tool, saves it to the requested path, and prints `SAVED <path>` in its final message. The MCP server parses that, falls back to scanning the parent dir for newly-created image files if needed, and returns the path to Claude.
+Codex generates the image, saves it to the requested path, and prints `SAVED <path>` in its final message. The MCP server parses that, falls back to scanning the parent dir for newly-created image files if needed, renames if Codex picked a different filename, and returns the path to Claude.
 
 Because everything goes through Codex (not the OpenAI API directly), image generation is **billed against your ChatGPT plan limits, not your API key**. Confirm `$0` after running tests by checking [platform.openai.com/usage](https://platform.openai.com/usage).
 
 ## Caveats
 
-- Image generation **burns Codex usage limits ~3-5× faster than text turns**. A single high-quality image counts as significantly more usage than a normal Codex agent turn.
-- Uses the Codex CLI under the hood — **NOT** the OpenAI API directly. No API key, no per-image dollar charges.
-- The `@imagegen` skill / built-in gpt-image tool needs to be available in your Codex install. `/imagegen:setup` verifies this with a probe.
+- Image generation **burns Codex usage limits ~3-5× faster than text turns**. A six-image landing-page build can chew through a non-trivial chunk of a daily Codex quota.
+- Calls take **30–90 seconds each**. A multi-image build will pause Claude for several minutes total — that's normal.
+- Uses the Codex CLI under the hood — **not** the OpenAI API directly. No API key, no per-image dollar charges.
+- Codex's `@imagegen` skill must be available in your Codex install. `/imagegen:setup` verifies this with a probe.
 
 ## Troubleshooting
 
@@ -129,20 +136,17 @@ The plugin ships a `settings.json` that pre-approves its three MCP tools. If you
 
 ### `/imagegen:setup` reports `codex_not_installed`
 
-Run, in a regular terminal (not inside Claude Code):
+Setup tries to install Codex via `npm install -g @openai/codex` automatically. If that hits `EACCES` / "permission denied" (common on system-installed Node on macOS/Linux), run it manually:
+
 ```
-npm install -g @openai/codex
+sudo npm install -g @openai/codex   # macOS/Linux
 ```
-On macOS/Linux you may need `sudo npm install -g …`.
+
+Or open a terminal as Administrator on Windows. Then re-run `/imagegen setup`.
 
 ### `/imagegen:setup` reports `codex_not_authed`
 
-`/imagegen:setup` automatically opens a browser sign-in window for you and waits up to 3 minutes for OAuth to complete — you don't need to leave Claude Code. Just complete the ChatGPT login in the browser tab that pops up; setup continues automatically.
-
-If the auto-launch doesn't work for some reason (rare), fall back to running this in any regular terminal and re-running `/imagegen:setup`:
-```
-codex login
-```
+Setup auto-launches a browser sign-in window and waits up to 3 minutes for OAuth to complete. Just complete the ChatGPT login in the browser tab that pops up; setup continues automatically. If the auto-launch doesn't work for any reason, fall back to `codex login` in any terminal, then re-run `/imagegen setup`.
 
 ### Transient OpenAI errors during generation
 
@@ -151,7 +155,7 @@ If you see `Reconnecting...` or `stream disconnected before completion` in the e
 ### `save_path_not_found` errors
 
 The most likely cause: the `@imagegen` / gpt-image built-in tool isn't activated in your Codex install. Try:
-- `codex --version` should be a recent build.
+- `codex --version` — should be a recent build.
 - Run `/imagegen:setup` and read the report.
 
 ### `/plugin marketplace add` does nothing
@@ -162,7 +166,7 @@ For private GitHub repos, make sure your machine has the credentials (HTTPS toke
 
 ### Node version too old
 
-The MCP server requires Node 18+. Check `node --version`. If too old, upgrade Node (e.g., via nvm, fnm, or your OS package manager).
+The MCP server requires Node 18+. Check `node --version`. If too old, upgrade via nvm, fnm, or your OS package manager.
 
 ## Development
 
@@ -171,12 +175,10 @@ The MCP server source is in `plugins/imagegen/server/src/`. To rebuild the bundl
 ```
 cd plugins/imagegen/server
 npm ci
-npm test
+npm test           # 44 tests, ~2s
 npm run typecheck
-npm run build
+npm run build      # produces dist/index.cjs (committed)
 ```
-
-Output: `plugins/imagegen/server/dist/index.cjs` (committed to the repo so end users don't need a build step).
 
 Source files:
 - `index.ts` — MCP boot, three tool handlers, validation
@@ -186,7 +188,7 @@ Source files:
 - `poller.ts` — file-stable detection, mtime-scan fallback, rename-to-target
 - `errors.ts` — error envelope + categorization
 
-Tests live in `plugins/imagegen/server/test/`. Run with `npm test`. CI re-runs them plus `git diff --exit-code dist/` to catch stale bundle commits.
+Tests live in `plugins/imagegen/server/test/`. CI re-runs `typecheck + test + build + git diff dist/` on every PR to catch stale bundle commits.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution flow.
 
@@ -196,4 +198,4 @@ MIT — see [LICENSE](LICENSE).
 
 ## Credits
 
-Built on [OpenAI Codex CLI](https://developers.openai.com/codex/cli) and the [Model Context Protocol SDK](https://modelcontextprotocol.io/).
+Built on [OpenAI Codex CLI](https://developers.openai.com/codex/cli) and the [Model Context Protocol SDK](https://modelcontextprotocol.io/). The hero image at the top of this README was generated by the plugin itself — meta-eating the dogfood.

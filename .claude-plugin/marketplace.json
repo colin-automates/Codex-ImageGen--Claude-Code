@@ -1,7 +1,8 @@
 {
   "name": "imagegen-marketplace",
   "owner": {
-    "name": "imagegen contributors"
+    "name": "colin-automates",
+    "url": "https://github.com/colin-automates"
   },
   "plugins": [
     {
