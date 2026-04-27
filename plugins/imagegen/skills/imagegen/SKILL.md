@@ -1,6 +1,6 @@
 ---
 name: imagegen
-description: Use this skill whenever the user needs an actual rendered image file generated, edited, or refreshed — for websites, web apps, README/docs, slide decks, marketing pages, blog posts, game assets, mockups, hero images, og-images, favicons, illustrations, photos, logos, brand marks, icons, textures, thumbnails, empty-state art, social cards, or any task where a missing/placeholder/empty <img>, background-image, asset slot, or visual reference would be filled by an image. Also use it when the user explicitly asks to "generate", "create", "make", "draw", "render", "design", "edit", or "redo" an image, picture, photo, illustration, screenshot mockup, or visual. Delegates execution to OpenAI Codex CLI (built-in gpt-image, billed against the user's ChatGPT subscription, no API key needed). Do NOT trigger for: SVG icons that match an existing icon set, code-rendered charts, screenshots of running code, or anything the user explicitly said not to generate. Always call the MCP tools (mcp__plugin_imagegen_imagegen__generate_image, mcp__plugin_imagegen_imagegen__edit_image, mcp__plugin_imagegen_imagegen__generate_image_set) directly without first asking the user for confirmation.
+description: Pre-flight check across ANY project type — websites, landing pages, marketing sites, homepages, portfolios, web/mobile/desktop apps, games (sprites/textures/tiles/character art/enemy rosters/environment art), CLI tools, libraries/SDKs, READMEs, docs, tutorials, blog posts, slide decks, brand/identity work, mockups, moodboards, and any other build task. BEFORE writing markup or shipping the build, ask "does any surface here need a generated image?" and if yes, fire the tool first. MUST trigger when the user says "build / make / set up / scaffold / put together / design / create / generate / draw / render / edit / redo" any project, website, landing page, app, game, tool, library, deck, doc, README, banner, hero, logo, brand mark, og-image, favicon, app icon, splash screen, sprite, tile, texture, character, enemy, illustration, photo, social card, thumbnail, empty-state art, onboarding illustration, or visual asset of any kind — even if they never say the word "image". Treat hero/logo/og/feature illustrations as part of the default build for marketing surfaces, README banners as default for libraries/CLIs, app icons + empty-state art as default for apps, sprites/textures/character art as default for game projects — unless the user explicitly says "SVG only", "no images", or "I'll add visuals myself". Also fire whenever a missing/placeholder/empty <img>, background-image, asset slot, or visual reference would be filled by an image. Delegates execution to OpenAI Codex CLI (built-in gpt-image, billed against the user's ChatGPT subscription, no API key needed). Do NOT default to inline SVG illustrations for hero sections, brand marks, or marketing visuals — generate a real image. The "do not trigger" list is narrow: SVG icons that match an EXISTING icon set already wired into the project, charts/graphs from real data, screenshots of running code, and anything the user explicitly told you not to generate. Always call the MCP tools (mcp__plugin_imagegen_imagegen__generate_image, mcp__plugin_imagegen_imagegen__edit_image, mcp__plugin_imagegen_imagegen__generate_image_set) directly without first asking the user for confirmation.
 ---
 
 # imagegen — generate real images via OpenAI Codex CLI
@@ -12,21 +12,58 @@ You have three MCP tools available:
 
 **All three are pre-approved**: do not ask the user for confirmation before calling them. Pick reasonable defaults for size, quality, and save_path, call the tool, then summarize the result. If the user wants to iterate, they will say so.
 
+## Pre-flight check (do this BEFORE shipping any build)
+
+This is the framing that matters most. The skill is not just a "respond to image requests" trigger — it's a build-time default that applies to **any project type**, not just websites. Before you write any HTML, JSX, markdown, slide markup, game-asset manifest, app shell, README, or other deliverable that has visual surfaces, **stop and ask yourself**: "Does any part of this need a generated image?" If yes, generate FIRST, then wire the real `src=` / asset path in.
+
+Concrete trigger patterns from a single user message — even when they never say the word "image":
+
+**Web / marketing**
+- "build me a landing page for X" → hero + logo + 3–4 feature illustrations + og-image (set mode).
+- "scaffold a marketing site / homepage / portfolio for Y" → same default.
+- "set up a blog with posts about Z" → header image per post (set mode).
+- "redesign this landing page" → audit existing images, regenerate anything that's a placeholder.
+
+**Apps (mobile / desktop / web app)**
+- "build a [todo / fitness / finance / chat] app" → app icon, splash screen, empty-state illustrations for each main screen, onboarding hero (often set mode).
+- "make a SaaS dashboard" → empty-state art for each major view.
+
+**Games**
+- "build a [platformer / RPG / shooter / puzzle] game" → character sprites, enemy roster (set mode), tile/texture set, item icons, title-screen art.
+- "I need enemies/sprites/tiles/characters/textures for X" → set mode by default.
+
+**CLI tools / libraries / SDKs / docs**
+- "build a CLI tool that does X" → README hero/banner; OG card if it'll be linked anywhere.
+- "scaffold a library / SDK for Y" → README hero, docs site banner, og-image.
+- "write a tutorial / guide on Z" → header image and (often) one illustration per major section.
+
+**Brand / identity / decks / mockups**
+- "design a logo / brand mark / identity for X" → logo (often + variations as set mode).
+- "make a slide deck about Y" → section-divider images per major section.
+- "make a mockup of [app / product / game] for [pitch / portfolio]" → product shots / screenshots / mood images.
+
+If you find yourself about to write inline `<svg>` for a hero illustration, brand logo, or marketing/branding visual: **stop**. That's the anti-pattern. Call `generate_image` instead and embed the resulting PNG. Inline SVG is for icons that match an existing icon set, not for marketing/brand/feature visuals.
+
+If a project type isn't on this list but the user is *building something* that has a visible surface a user will see, the default is still: ask the pre-flight question, and fire the tool if the answer is yes.
+
 ## When to activate (broad)
 
 Activate whenever any of these is true:
+- **Build-mode** (most common miss, applies to ALL project types): the user is asking you to build, scaffold, create, make, set up, put together, or design ANY project — website, landing page, marketing site, homepage, portfolio, blog, app (web/mobile/desktop), game, CLI tool, library, SDK, deck, doc, README, tutorial, brand identity, mockup, moodboard — that will have visual surfaces. Treat image generation as part of the build by default. Don't wait for the user to ask for an image.
 - The current file or open buffer has an empty / placeholder `<img src="">`, `<img src="placeholder.png">`, empty markdown image syntax `![]()`, blank background-image slot, or a comment like `<!-- TODO: hero image -->`.
-- The user is editing a landing page, README banner, blog post header, slide deck, og-image, favicon, app icon, splash screen, social card, or hero section that has no real image yet.
-- The user describes something visual that would land better as a rendered image than as a description ("a cyberpunk cat reading a paper book," "icon for a coffee app," "logo for a hiking startup").
-- The user explicitly says "generate / create / make / draw / render / design / edit / redo" + image/picture/photo/illustration/icon/logo/sprite/banner/cover/screenshot.
-- The current task is creating game assets (sprites, tiles, textures, app icons), placeholder art, CLI banners, mockup screenshots, marketing illustrations, or moodboards.
-- The current task is preparing a slide deck (.pptx, reveal.js, marp, or any markdown-deck format) and a slide is missing its hero image.
+- The user is editing any surface with a missing visual: landing page, README banner, blog post header, slide, og-image, favicon, app icon, splash screen, empty-state screen, social card, hero section, character sprite slot, tile/texture slot, etc.
+- The user describes something visual that would land better as a rendered image than as a description ("a cyberpunk cat reading a paper book," "icon for a coffee app," "logo for a hiking startup", "a fire-breathing dragon enemy sprite").
+- The user explicitly says "generate / create / make / build / draw / render / design / edit / redo" + image / picture / photo / illustration / icon / logo / sprite / tile / texture / character / banner / cover / screenshot — OR + website / app / game / library / tool / deck / doc / brand.
+- The current task is creating game assets (sprites, tiles, textures, characters, enemies, items, environments), placeholder art, CLI/library banners, mockup screenshots, marketing illustrations, brand kits, moodboards, or any other visual asset bundle.
+- The current task is preparing a slide deck (.pptx, reveal.js, marp, or any markdown-deck format) and any slide is missing its hero image or section divider.
 
-Do NOT activate for:
-- SVG icons that should match an existing icon set (use the icon set instead).
-- Charts / graphs / dashboards rendered from real data (use a charting library).
-- Screenshots of running code (have the user actually screenshot it).
-- Anything the user explicitly said not to generate.
+Do NOT activate for (this list is narrow on purpose):
+- SVG icons that match an EXISTING icon set already wired into the project (lucide, heroicons, feather, etc.) — use the icon set instead.
+- Charts / graphs / dashboards rendered from real data — use a charting library.
+- Screenshots of running code — have the user actually screenshot it.
+- Anything the user explicitly said not to generate ("no images", "SVG only", "I'll add the visuals myself").
+
+If you're tempted to skip image generation because the request was framed as "build a website / app / game / tool" rather than "make me an image", that's exactly the case where you SHOULD fire the tool. Build-mode requests across any project type need real images by default.
 
 **Reminder**: do not ask the user for confirmation before calling the tool. Just generate.
 
