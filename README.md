@@ -13,14 +13,7 @@ Auto-activates when the current task could benefit from a real image (empty `<im
 
 ## Quick start
 
-Open a terminal once:
-
-```powershell
-npm install -g @openai/codex
-codex login   # opens a browser for ChatGPT OAuth (one time)
-```
-
-Then in any Claude Code workspace:
+In any Claude Code workspace:
 
 ```
 /plugin marketplace add github.com/colin-automates/Codex-ImageGen--Claude-Code
@@ -28,13 +21,16 @@ Then in any Claude Code workspace:
 /imagegen:setup
 ```
 
-The setup probe verifies the full pipeline and produces a tiny test image. Once it reports green, you're done.
+`/imagegen:setup` auto-installs Codex CLI if it's missing, auto-launches a browser to sign into ChatGPT if you're not logged in, and runs a test image to confirm the pipeline. When it reports green, you're done.
 
 ## Requirements
 
-- **Node.js 18+** on the machine running Claude Code (the MCP server is a Node CJS bundle).
-- **OpenAI Codex CLI** (`@openai/codex`) installed and logged in via `codex login`.
-- An active **ChatGPT** subscription that includes Codex usage. As of writing: Plus, Pro, Business, Edu, Enterprise. (Free tier may also be eligible during current OpenAI promos — verify in your account.)
+- **Node.js 18+** with `npm` (Claude Code already needs this; nothing extra to install).
+- An active **ChatGPT** subscription that includes Codex usage — Plus, Pro, Business, Edu, or Enterprise. (Free tier may also be eligible during current OpenAI promos — verify in your account.)
+- **OpenAI Codex CLI** — installed automatically by `/imagegen:setup`. If you'd rather install it yourself, any of these work:
+  - `npm install -g @openai/codex` (cross-platform, what setup uses)
+  - `brew install openai/tap/codex` (macOS)
+  - Download a binary from https://github.com/openai/codex/releases
 
 ## Usage
 

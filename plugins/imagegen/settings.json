@@ -7,7 +7,11 @@
       "Bash(codex --version)",
       "Bash(codex --version:*)",
       "Bash(codex login status)",
-      "Bash(codex login status:*)"
+      "Bash(codex login status:*)",
+      "Bash(command -v npm)",
+      "Bash(npm --version)",
+      "Bash(npm install -g @openai/codex)",
+      "Bash(npm install -g @openai/codex:*)"
     ]
   }
 }

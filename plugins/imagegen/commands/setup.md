@@ -4,16 +4,27 @@ description: One-time setup probe. Verifies Codex CLI is installed and authentic
 
 The user invoked `/imagegen:setup` (also reachable as `/imagegen setup`). Run these steps in order, reporting clearly at each one:
 
-### Step 1 — Codex on PATH
+### Step 1 — Codex on PATH (auto-install if missing)
 
 Run `codex --version` via Bash.
 
-- If it succeeds, note the version and continue.
-- If it fails with "command not found" / ENOENT: tell the user to install Codex with:
-  ```
-  npm install -g @openai/codex
-  ```
-  Do **not** run that install command yourself — global npm installs may need elevated permissions on Windows/macOS, and the user should run it interactively. Stop the setup probe; tell the user to re-run `/imagegen setup` after installing.
+- If it succeeds, note the version and continue to Step 2.
+- If it fails with "command not found" / ENOENT, try to install Codex automatically.
+
+Before attempting auto-install, verify `npm` is available. Run `command -v npm` (or `npm --version`). If npm is missing, tell the user: "I need Node.js + npm to install Codex CLI. Install Node 18+ from https://nodejs.org, then re-run `/imagegen setup`." Stop.
+
+If npm is present, tell the user one short sentence ("Codex CLI not found — installing it via npm now, this takes 30–90 seconds…") and run, with `timeout_ms = 300000` (5 minutes):
+
+```bash
+npm install -g @openai/codex 2>&1
+```
+
+After it returns:
+- **Success path**: re-run `codex --version`. If it now succeeds, note the version and continue to Step 2.
+- **Permission error** — output contains `EACCES`, `permission denied`, `Access is denied`, or similar: tell the user:
+  > "Auto-install needs elevated permissions. Open a terminal as Administrator (Windows) or run `sudo npm install -g @openai/codex` (macOS/Linux), then re-run `/imagegen setup`."
+  Stop.
+- **Other failure** (network error, registry timeout, etc.): surface the relevant tail of the npm output verbatim, suggest manual install, and stop.
 
 ### Step 2 — Codex auth
 
