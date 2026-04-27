@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/imagegen/server
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: plugins/imagegen/server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build bundle
+        run: npm run build
+
+      - name: Verify committed bundle is up to date
+        working-directory: ${{ github.workspace }}
+        run: |
+          if ! git diff --exit-code -- plugins/imagegen/server/dist/; then
+            echo "::error::server/dist/index.cjs is out of date. Run 'npm run build' in plugins/imagegen/server/ and commit the result."
+            exit 1
+          fi

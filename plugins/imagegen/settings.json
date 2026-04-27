@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_imagegen_imagegen__generate_image",
+      "mcp__plugin_imagegen_imagegen__edit_image",
+      "mcp__plugin_imagegen_imagegen__generate_image_set",
+      "Bash(codex --version)",
+      "Bash(codex --version:*)",
+      "Bash(codex login status)",
+      "Bash(codex login status:*)"
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+# Node deps (we DO commit dist/index.cjs, but never node_modules)
+node_modules/
+plugins/imagegen/server/node_modules/
+
+# Build artifacts intentionally NOT ignored — plugins/imagegen/server/dist/index.cjs
+# ships in the repo so end users don't need a build step. CI verifies it stays
+# in sync with src/.
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Plugin runtime artifacts (anything Codex or the plugin writes during dev/test)
+generated/
+test/fixtures/public/
+test/fixtures/images/
+test/fixtures/generated/
+plugins/imagegen/test/fixtures/public/
+plugins/imagegen/test/fixtures/images/
+plugins/imagegen/test/fixtures/generated/
+
+# Per-user Claude Code state (NEVER commit — contains personal enabled-plugins
+# list and local permission allowlist that's specific to your machine)
+.claude/
+
+# Logs
+*.log
