@@ -23,7 +23,7 @@ codex login   # opens a browser for ChatGPT OAuth (one time)
 Then in any Claude Code workspace:
 
 ```
-/plugin marketplace add github.com/<OWNER>/imagegen-claude-plugin
+/plugin marketplace add github.com/colin-automates/Codex-ImageGen--Claude-Code
 /plugin install imagegen@imagegen-marketplace
 /imagegen:setup
 ```
