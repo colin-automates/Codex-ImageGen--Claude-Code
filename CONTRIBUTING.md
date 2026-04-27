@@ -6,8 +6,8 @@ Thanks for considering a contribution. The plugin is small and the code paths ar
 
 ```bash
 # Clone and enter the server directory
-git clone <REPO_URL>
-cd <repo>/plugins/imagegen/server
+git clone https://github.com/colin-automates/Codex-ImageGen--Claude-Code
+cd Codex-ImageGen--Claude-Code/plugins/imagegen/server
 
 # Install dependencies (Node 18+ required)
 npm ci
@@ -25,7 +25,7 @@ The MCP server source lives in `plugins/imagegen/server/src/`. The committed `di
 The fastest dev loop is `--plugin-dir`:
 
 ```bash
-claude --plugin-dir <repo>/plugins/imagegen
+claude --plugin-dir Codex-ImageGen--Claude-Code/plugins/imagegen
 ```
 
 In an existing Claude Code session you've installed the plugin into, run `/reload-plugins` after editing markdown files (SKILL, commands, manifests). For server source changes, also run `npm run build` and reload the window.

@@ -12,7 +12,6 @@ export interface SuccessResult {
   ok: true;
   paths: string[];
   notes?: string;
-  codex_session_id?: string;
 }
 
 export interface FailureResult {

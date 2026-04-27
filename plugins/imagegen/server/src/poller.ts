@@ -50,13 +50,11 @@ export async function waitForStable(
 export interface MtimeScanOpts {
   dir: string;
   startedAt: number;
-  excludePaths?: string[];
 }
 
 export async function scanForNewImages(
   opts: MtimeScanOpts
 ): Promise<{ path: string; size: number; mtimeMs: number }[]> {
-  const exclude = new Set((opts.excludePaths ?? []).map((p) => path.resolve(p)));
   let entries: string[] = [];
   try {
     entries = await fs.readdir(opts.dir);
@@ -68,7 +66,6 @@ export async function scanForNewImages(
     const ext = path.extname(name).toLowerCase();
     if (!IMAGE_EXTS.has(ext)) continue;
     const abs = path.resolve(opts.dir, name);
-    if (exclude.has(abs)) continue;
     const s = await statSafe(abs);
     if (!s) continue;
     if (s.mtimeMs >= opts.startedAt - 1000 && s.size >= 1024) {

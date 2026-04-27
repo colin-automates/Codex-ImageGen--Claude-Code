@@ -33,14 +33,35 @@ function resolveInWorkspace(p: string): string {
   return path.resolve(workspaceRoot(), p);
 }
 
+export function isUnderTrustedRoot(
+  candidate: string,
+  expectedPath: string,
+  workspace: string
+): boolean {
+  const abs = path.resolve(candidate);
+  const roots = [workspace, path.dirname(expectedPath)].map((r) => path.resolve(r));
+  return roots.some((root) => {
+    const rel = path.relative(root, abs);
+    return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+  });
+}
+
 async function finalizeSavedFile(
   expectedPath: string,
   reportedPath: string | undefined,
   startedAt: number
 ): Promise<{ ok: true; finalPath: string } | { ok: false; reason: string }> {
   const candidates: string[] = [];
-  if (reportedPath) candidates.push(reportedPath);
-  if (expectedPath !== reportedPath) candidates.push(expectedPath);
+  // Only trust Codex's reported path if it lands under the workspace or the
+  // dir we explicitly told it to save to. Anything else (e.g. a prompt-injected
+  // SAVED line pointing at /etc/passwd) is silently dropped — we fall through
+  // to the mtime scan, which only looks inside dirname(expectedPath).
+  if (reportedPath && isUnderTrustedRoot(reportedPath, expectedPath, workspaceRoot())) {
+    candidates.push(reportedPath);
+  }
+  if (path.resolve(expectedPath) !== (reportedPath ? path.resolve(reportedPath) : "")) {
+    candidates.push(expectedPath);
+  }
 
   for (const c of candidates) {
     const stable = await waitForStable(c);

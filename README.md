@@ -39,7 +39,7 @@ The headline feature. Once the plugin is installed, you don't think about it. Ex
 | *"redesign this slide deck"* | Empty hero slots in `.md`/marp/reveal.js decks get filled per-slide. |
 | *"fix the broken `<img src="">` in landing.html"* | Single image, saved next to the page, `src=""` rewritten with a real `alt`. |
 
-**Trigger surface** (what's in the SKILL's `description` field that Claude reads to decide whether to fire): websites, web apps, READMEs, slide decks, marketing pages, blog posts, game assets, mockups, hero/og/banner/cover images, favicons, icons, logos, brand marks, textures, thumbnails, social cards, plus the verbs *"generate / create / make / draw / render / design / edit / redo"* applied to *image / picture / photo / illustration / sprite / banner*.
+**Trigger surface** (what's in the SKILL's `description` field that Claude reads to decide whether to fire): websites, web apps, READMEs, slide decks, marketing pages, blog posts, game assets, mockups, hero/og/banner/cover images, favicons, icons, logos, brand marks, illustrations, photos, textures, thumbnails, social cards, empty-state art, plus the verbs *"generate / create / make / draw / render / design / edit / redo"* applied to *image / picture / photo / illustration / sprite / banner*.
 
 **Non-triggers** (intentionally): SVG icons that match an existing icon set, code-rendered charts, screenshots of running code, or anything you explicitly told Claude not to generate.
 
@@ -108,13 +108,14 @@ Because everything goes through Codex (not the OpenAI API directly), image gener
 
 ### `Unknown command: /imagegen`
 
-Plugin slash commands are always namespaced. Use the colon form:
+Try the namespaced colon form, which always works:
 
 ```
 /imagegen:setup
-/imagegen:imagegen "<prompt>"
 /imagegen:edit ./path "<edit instructions>"
 ```
+
+The bare `/imagegen "<prompt>"` form should also work in current Claude Code; if your version doesn't recognize it, fall back to `/imagegen:img "<prompt>"`.
 
 ### Claude pops a permission prompt before every tool call
 
@@ -175,7 +176,7 @@ The MCP server source is in `plugins/imagegen/server/src/`. To rebuild the bundl
 ```
 cd plugins/imagegen/server
 npm ci
-npm test           # 44 tests, ~2s
+npm test           # 48 tests, ~2s
 npm run typecheck
 npm run build      # produces dist/index.cjs (committed)
 ```

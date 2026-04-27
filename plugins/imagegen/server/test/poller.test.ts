@@ -59,22 +59,6 @@ describe("scanForNewImages", () => {
     expect(names).toEqual(["a.png", "b.jpg"]);
   });
 
-  it("excludes paths in excludePaths", async () => {
-    const startedAt = Date.now();
-    await new Promise((r) => setTimeout(r, 50));
-    const p1 = path.join(workDir, "a.png");
-    const p2 = path.join(workDir, "b.png");
-    await fs.writeFile(p1, Buffer.alloc(2048));
-    await fs.writeFile(p2, Buffer.alloc(2048));
-    const matches = await scanForNewImages({
-      dir: workDir,
-      startedAt,
-      excludePaths: [p1],
-    });
-    expect(matches.length).toBe(1);
-    expect(path.basename(matches[0].path)).toBe("b.png");
-  });
-
   it("returns empty array if dir doesn't exist", async () => {
     const matches = await scanForNewImages({
       dir: path.join(workDir, "no-such"),
