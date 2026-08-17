@@ -17,7 +17,7 @@ Slash commands (`/imagegen "<prompt>"`, `/imagegen:edit`) are still there for ex
 In any Claude Code workspace:
 
 ```
-/plugin marketplace add github.com/colin-automates/Codex-ImageGen--Claude-Code
+/plugin marketplace add https://github.com/colin-automates/Codex-ImageGen--Claude-Code
 /plugin install imagegen@imagegen-marketplace
 /imagegen:setup
 ```
