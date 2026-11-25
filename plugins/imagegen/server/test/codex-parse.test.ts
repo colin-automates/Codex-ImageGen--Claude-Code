@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseSavedLines, outcomeIsFailure } from "../src/codex.js";
+import { parseSavedLines, outcomeIsFailure, buildCodexArgs } from "../src/codex.js";
 import type { CodexRunOutcome } from "../src/codex.js";
 
 describe("parseSavedLines", () => {
@@ -82,5 +82,29 @@ describe("outcomeIsFailure", () => {
     // exitCode null without timeout or spawnError can happen if process group state is odd;
     // we treat it as not-explicitly-failed.
     expect(outcomeIsFailure(baseOutcome({ exitCode: null }))).toBe(false);
+  });
+});
+
+describe("buildCodexArgs", () => {
+  const base = { workspaceRoot: "/ws", addDirs: [], timeoutMs: 1000 };
+
+  it("puts the prompt after a -- terminator", () => {
+    const argv = buildCodexArgs({ ...base, prompt: "draw a cat" }, "/tmp/last.txt");
+    expect(argv.slice(-2)).toEqual(["--", "draw a cat"]);
+  });
+
+  it("keeps the prompt out of the variadic -i list when images are attached", () => {
+    const argv = buildCodexArgs(
+      { ...base, prompt: "make it blue", attachImages: ["/ws/a.png", "/ws/b.png"] },
+      "/tmp/last.txt"
+    );
+    const sep = argv.indexOf("--");
+    expect(sep).toBeGreaterThan(argv.lastIndexOf("-i"));
+    expect(argv.slice(sep)).toEqual(["--", "make it blue"]);
+  });
+
+  it("passes a prompt that starts with a dash through intact", () => {
+    const argv = buildCodexArgs({ ...base, prompt: "-flag-looking prompt" }, "/tmp/last.txt");
+    expect(argv.slice(-2)).toEqual(["--", "-flag-looking prompt"]);
   });
 });

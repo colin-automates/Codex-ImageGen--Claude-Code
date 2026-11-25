@@ -47,9 +47,16 @@ function lastMsgFilePath(): string {
   return path.join(dir, "last-message.txt");
 }
 
-export async function runCodexExec(args: CodexRunArgs): Promise<CodexRunOutcome> {
-  const lastMsgFile = lastMsgFilePath();
-
+/**
+ * Build the argv for `codex exec`. Exported for testing.
+ *
+ * `-i/--image` is variadic in Codex CLI (`--image <FILE>...`), so a prompt
+ * placed directly after it is parsed as another image path. Codex then finds
+ * no prompt, falls back to stdin (which we close), and exits 1 with
+ * "No prompt provided via stdin." The `--` terminator ends option parsing so
+ * the prompt is always read as the positional argument.
+ */
+export function buildCodexArgs(args: CodexRunArgs, lastMsgFile: string): string[] {
   const cliArgs: string[] = [
     "exec",
     "--skip-git-repo-check",
@@ -70,7 +77,13 @@ export async function runCodexExec(args: CodexRunArgs): Promise<CodexRunOutcome>
       cliArgs.push("-i", img);
     }
   }
-  cliArgs.push(args.prompt);
+  cliArgs.push("--", args.prompt);
+  return cliArgs;
+}
+
+export async function runCodexExec(args: CodexRunArgs): Promise<CodexRunOutcome> {
+  const lastMsgFile = lastMsgFilePath();
+  const cliArgs = buildCodexArgs(args, lastMsgFile);
 
   const startedAt = Date.now();
   let stdoutBuf = "";
