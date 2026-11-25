@@ -3,6 +3,9 @@ import * as path from "node:path";
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".webp"]);
 
+/** Tolerance for coarse filesystem mtime resolution when comparing against a run's start time. */
+export const MTIME_SLACK_MS = 1000;
+
 async function statSafe(p: string): Promise<{ size: number; mtimeMs: number } | null> {
   try {
     const s = await fs.stat(p);
@@ -13,10 +16,20 @@ async function statSafe(p: string): Promise<{ size: number; mtimeMs: number } | 
   }
 }
 
+/**
+ * Wait for a file to exist and stop growing.
+ *
+ * `notBefore` (epoch ms): if set, a file whose mtime is older than this is
+ * reported as `stale` instead of `ok`. Callers check only after Codex has
+ * exited, so a stale file is a leftover from an earlier run (e.g. a previous
+ * image at the same save_path), not something Codex is still writing.
+ */
 export async function waitForStable(
   filePath: string,
-  opts: { tickMs?: number; maxWaitMs?: number; minBytes?: number } = {}
-): Promise<{ ok: true; size: number } | { ok: false; reason: "missing" | "unstable" | "too_small" }> {
+  opts: { tickMs?: number; maxWaitMs?: number; minBytes?: number; notBefore?: number } = {}
+): Promise<
+  { ok: true; size: number } | { ok: false; reason: "missing" | "unstable" | "too_small" | "stale" }
+> {
   const tickMs = opts.tickMs ?? 250;
   const maxWaitMs = opts.maxWaitMs ?? 30_000;
   const minBytes = opts.minBytes ?? 1024;
@@ -26,6 +39,9 @@ export async function waitForStable(
 
   while (Date.now() < deadline) {
     const s = await statSafe(filePath);
+    if (s && opts.notBefore !== undefined && s.mtimeMs < opts.notBefore) {
+      return { ok: false, reason: "stale" };
+    }
     if (s) {
       if (s.size === lastSize && s.size >= minBytes) {
         stableHits += 1;
@@ -68,7 +84,7 @@ export async function scanForNewImages(
     const abs = path.resolve(opts.dir, name);
     const s = await statSafe(abs);
     if (!s) continue;
-    if (s.mtimeMs >= opts.startedAt - 1000 && s.size >= 1024) {
+    if (s.mtimeMs >= opts.startedAt - MTIME_SLACK_MS && s.size >= 1024) {
       found.push({ path: abs, size: s.size, mtimeMs: s.mtimeMs });
     }
   }

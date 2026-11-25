@@ -14,7 +14,7 @@ import {
 import { fail, categorizeCodexError, type ToolResult, type SuccessResult } from "./errors.js";
 import { runCodexExec, parseSavedLines, outcomeIsFailure, type CodexRunOutcome } from "./codex.js";
 import { buildGeneratePrompt, buildEditPrompt, buildSetPrompt, slugify } from "./prompts.js";
-import { ensureDir, moveIfNeeded, scanForNewImages, waitForStable } from "./poller.js";
+import { ensureDir, moveIfNeeded, scanForNewImages, waitForStable, MTIME_SLACK_MS } from "./poller.js";
 
 const NODE_MAJOR = parseInt(process.versions.node.split(".")[0] ?? "0", 10);
 if (NODE_MAJOR < 18) {
@@ -64,7 +64,10 @@ async function finalizeSavedFile(
   }
 
   for (const c of candidates) {
-    const stable = await waitForStable(c);
+    // Only accept a file written during this run. Without the mtime check, an
+    // earlier image already at save_path was reported as success even when
+    // Codex failed to produce anything.
+    const stable = await waitForStable(c, { notBefore: startedAt - MTIME_SLACK_MS });
     if (stable.ok) {
       if (path.resolve(c) !== path.resolve(expectedPath)) {
         try {
