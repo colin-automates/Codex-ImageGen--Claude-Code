@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { promises as fs } from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { waitForStable, scanForNewImages, ensureDir, moveIfNeeded } from "../src/poller.js";
+import { waitForStable, scanForNewImages, ensureDir, moveIfNeeded, MTIME_SLACK_MS } from "../src/poller.js";
 
 let workDir: string;
 
@@ -40,6 +40,39 @@ describe("waitForStable", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toBe("too_small");
+  });
+
+  it("returns reason=stale for a leftover file older than notBefore", async () => {
+    const p = path.join(workDir, "leftover.png");
+    await fs.writeFile(p, Buffer.alloc(2048, 0xff));
+    const old = new Date(Date.now() - 9 * 24 * 60 * 60 * 1000);
+    await fs.utimes(p, old, old);
+    const started = Date.now();
+    const r = await waitForStable(p, { tickMs: 50, maxWaitMs: 5000, notBefore: started });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe("stale");
+    // Returns immediately rather than waiting out maxWaitMs.
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+
+  it("returns ok for a file written after notBefore", async () => {
+    const notBefore = Date.now() - MTIME_SLACK_MS;
+    const p = path.join(workDir, "fresh.png");
+    await fs.writeFile(p, Buffer.alloc(2048, 0xff));
+    const r = await waitForStable(p, { tickMs: 50, maxWaitMs: 1000, notBefore });
+    expect(r.ok).toBe(true);
+  });
+
+  it("returns ok when an existing file is overwritten during the run", async () => {
+    const p = path.join(workDir, "overwrite.png");
+    await fs.writeFile(p, Buffer.alloc(2048, 0x00));
+    const old = new Date(Date.now() - 60_000);
+    await fs.utimes(p, old, old);
+    const notBefore = Date.now() - MTIME_SLACK_MS;
+    await fs.writeFile(p, Buffer.alloc(4096, 0xff));
+    const r = await waitForStable(p, { tickMs: 50, maxWaitMs: 1000, notBefore });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.size).toBe(4096);
   });
 });
 
